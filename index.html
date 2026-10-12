@@ -131,6 +131,36 @@
           <button type="button" id="btnImportBackup" class="primary" disabled>确认合并导入</button>
           <p id="backupStatus" class="status" role="status"></p>
         </section>
+        <section class="panel">
+          <h2>GitHub Gist 同步</h2>
+          <p class="hint">
+            用一个私密 Gist 同步做题记录、错题、解析和模拟成绩。Token 只保存在当前浏览器，不会写入题库备份。
+          </p>
+          <label class="field">
+            <span>GitHub Token（需要 gist 权限）</span>
+            <input
+              type="password"
+              id="gistToken"
+              autocomplete="off"
+              placeholder="github_pat_..."
+            />
+          </label>
+          <label class="field">
+            <span>Gist ID（第一次可留空，会自动创建）</span>
+            <input type="text" id="gistId" autocomplete="off" placeholder="例如 1a2b3c..." />
+          </label>
+          <label class="check-row">
+            <input type="checkbox" id="rememberGistToken" />
+            <span>在本机保存 Token</span>
+          </label>
+          <div class="row">
+            <button type="button" id="btnSaveGistCfg" class="ghost sm">保存同步设置</button>
+            <button type="button" id="btnPullGist" class="ghost">下载云端并合并</button>
+            <button type="button" id="btnPushGist" class="ghost">上传本机到云端</button>
+            <button type="button" id="btnSyncGist" class="primary">同步一次</button>
+          </div>
+          <p id="gistStatus" class="status" role="status"></p>
+        </section>
         <section class="panel" id="ai">
           <h2>DeepSeek API</h2>
           <p class="hint">密钥仅保存在浏览器 localStorage，不会上传到本服务器。</p>
@@ -188,6 +218,7 @@
     <script src="./static/app.js"></script>
     <script src="./static/analysis.js"></script>
     <script src="./static/backup.js"></script>
+    <script src="./static/sync.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

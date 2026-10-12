@@ -1,4 +1,4 @@
-const CACHE_NAME = "teacher-quiz-offline-v1";
+const CACHE_NAME = "teacher-quiz-offline-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./static/app.js",
   "./static/analysis.js",
   "./static/backup.js",
+  "./static/sync.js",
   "./data/banks.json",
   "./data/questions/bank-01.json",
   "./data/questions/bank-02.json",
@@ -31,6 +32,11 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

@@ -138,6 +138,20 @@ body {
   color: var(--muted);
 }
 
+.check-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 2px 0 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.check-row input {
+  width: 18px;
+  height: 18px;
+}
+
 select,
 input[type="text"],
 input[type="password"] {
