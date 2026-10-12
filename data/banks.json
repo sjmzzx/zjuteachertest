@@ -1,0 +1,30 @@
+[
+  {
+    "id": "大学心理学2026",
+    "name": "大学心理学2026",
+    "filename": "大学心理学2026.xlsx",
+    "count": 516,
+    "dataFile": "data/questions/bank-01.json"
+  },
+  {
+    "id": "教师伦理学2026",
+    "name": "教师伦理学2026",
+    "filename": "教师伦理学2026.xlsx",
+    "count": 650,
+    "dataFile": "data/questions/bank-02.json"
+  },
+  {
+    "id": "高等教育学2026",
+    "name": "高等教育学2026",
+    "filename": "高等教育学2026.xlsx",
+    "count": 449,
+    "dataFile": "data/questions/bank-03.json"
+  },
+  {
+    "id": "高等教育法规与政策2026",
+    "name": "高等教育法规与政策2026",
+    "filename": "高等教育法规与政策2026.xlsx",
+    "count": 559,
+    "dataFile": "data/questions/bank-04.json"
+  }
+]

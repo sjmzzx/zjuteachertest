@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>教师教育理论刷题离线版</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="刷题离线版" />
+    <link rel="stylesheet" href="./static/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <h1>教师教育理论刷题离线版</h1>
+        <p class="sub">手机离线题库 · 错题统计 · 模拟组卷</p>
+        <button type="button" id="themeToggle" class="ghost sm" aria-pressed="false">切换日间模式</button>
+      </header>
+
+      <nav class="nav" id="mainNav">
+        <button type="button" class="nav-btn active" data-nav="home">刷题</button>
+        <button type="button" class="nav-btn" data-nav="wrongbook">错题本</button>
+        <button type="button" class="nav-btn" data-nav="settings">设置与备份</button>
+      </nav>
+
+      <div id="page-home" class="page">
+        <section class="panel" id="setup">
+          <h2>开始</h2>
+          <label class="field">
+            <span>选择题库</span>
+            <select id="bankSelect"></select>
+          </label>
+          <label class="field">
+            <span>练习分类</span>
+            <select id="categorySelect"></select>
+          </label>
+          <label class="field">
+            <span>出题方式</span>
+            <select id="practiceMode">
+              <option value="unseen-first">未做题优先</option>
+              <option value="unseen">只练未做题</option>
+              <option value="all">全部题目随机复习</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>本轮最多几题（可选）</span>
+            <input
+              type="number"
+              id="sessionLimit"
+              min="1"
+              step="1"
+              placeholder="不填则本模式下列出的题全部做完"
+            />
+          </label>
+          <p id="sessionStatus" class="status" role="status"></p>
+          <div class="row">
+            <button type="button" id="btnResume" class="primary" disabled>继续上次练习</button>
+            <button type="button" id="btnStart" class="primary">开始刷题</button>
+            <button type="button" id="btnCategory" class="ghost">练当前分类</button>
+            <button type="button" id="btnWrong" class="ghost">只练错题</button>
+            <button type="button" id="btnExam" class="ghost">开始模拟组卷</button>
+          </div>
+          <p id="examStats" class="status" role="status"></p>
+          <div id="categorySummary" class="category-summary" aria-live="polite"></div>
+          <p id="unclassifiedStatus" class="status" role="status"></p>
+        </section>
+
+        <section class="panel" id="bankOverview">
+          <h2>题库熟悉度</h2>
+          <p class="hint">
+            可按题型筛选。热图按逐题正确率着色（蓝色较高、红色较低）；尚未做过和历史记录缺少逐次作答数据的题目会单独标出。
+          </p>
+          <label class="field">
+            <span>选择题库</span>
+            <select id="overviewBankSelect"></select>
+          </label>
+          <label class="field">
+            <span>题型筛选</span>
+            <select id="heatFilter">
+              <option value="all">全部题型</option>
+              <option value="single">单选题</option>
+              <option value="multi">多选题</option>
+              <option value="judge">判断题</option>
+            </select>
+          </label>
+          <p id="heatAccuracy" class="status" role="status"></p>
+          <div class="heat-legend heat-legend-row" id="heatLegend" aria-hidden="true">
+            <span class="heat-legend-swatch heat-legend-swatch-unseen" title="未做过"></span>
+            <span class="heat-legend-label">未做</span>
+            <span class="heat-legend-swatch heat-legend-swatch-history" title="无逐次正确率记录"></span>
+            <span class="heat-legend-label">暂无正确率</span>
+            <span class="heat-legend-gap"></span>
+            <span class="heat-legend-label">正确率</span>
+            <div class="heat-legend-bar"></div>
+            <span class="heat-legend-label">低</span>
+          </div>
+          <div id="heatMatrix" class="heat-matrix" role="img" aria-label="题目熟悉度热图"></div>
+        </section>
+      </div>
+
+      <div id="page-wrongbook" class="page hidden">
+        <section class="panel">
+          <h2>错题本</h2>
+          <p class="hint">
+            按题库分别记录错题次数（含单选、多选、判断）；数据保存在本机浏览器。每题下方的「AI 解析」默认折叠；生成后保存在本机，可「编辑」修改并「保存」，再次打开不会重复请求 API（保存为空则清除该条解析）。左侧色条与热格规则同「题库熟悉度」。
+          </p>
+          <label class="field">
+            <span>查看题库</span>
+            <select id="wrongBankSelect"></select>
+          </label>
+          <div class="heat-legend heat-legend-compact" id="wrongHeatLegend" aria-hidden="true">
+            <span class="heat-legend-label">更熟</span>
+            <div class="heat-legend-bar"></div>
+            <span class="heat-legend-label">需加强</span>
+          </div>
+          <div id="wrongHeatStrip" class="wrong-heat-strip" role="img" aria-label="错题熟悉度条"></div>
+          <div id="wrongList" class="wrong-list"></div>
+        </section>
+      </div>
+
+      <div id="page-settings" class="page hidden">
+        <section class="panel">
+          <h2>记录备份</h2>
+          <button type="button" id="btnExportBackup" class="ghost">导出备份</button>
+          <label class="field">
+            <span>导入备份文件</span>
+            <input type="file" id="backupFile" accept=".json,application/json" />
+          </label>
+          <p class="hint">合并规则：保留已有解析，补充缺失记录；同题错题次数取较大值。不包含 API 密钥。</p>
+          <button type="button" id="btnImportBackup" class="primary" disabled>确认合并导入</button>
+          <p id="backupStatus" class="status" role="status"></p>
+        </section>
+        <section class="panel" id="ai">
+          <h2>DeepSeek API</h2>
+          <p class="hint">密钥仅保存在浏览器 localStorage，不会上传到本服务器。</p>
+          <label class="field">
+            <span>API Key</span>
+            <input
+              type="password"
+              id="apiKey"
+              autocomplete="off"
+              placeholder="sk-..."
+            />
+          </label>
+          <label class="field">
+            <span>Base URL（默认 DeepSeek）</span>
+            <input type="text" id="apiBase" value="https://api.deepseek.com" />
+          </label>
+          <label class="field">
+            <span>模型</span>
+            <input type="text" id="apiModel" value="deepseek-chat" />
+          </label>
+          <div class="row">
+            <button type="button" id="btnSaveKey" class="primary sm">保存设置</button>
+            <span id="keyStatus" class="status"></span>
+            <button type="button" id="btnTestApi" class="ghost">测试 API</button>
+          </div>
+          <p id="apiTestStatus" class="status" role="status"></p>
+          <h2>全题库简短解析</h2>
+          <div class="row">
+            <button type="button" id="btnBatchAnalysis" class="primary">开始 / 继续解析全部题目</button>
+            <button type="button" id="btnStopAnalysis" class="ghost" disabled>停止</button>
+          </div>
+          <p id="batchStatus" class="status" role="status">尚未开始</p>
+        </section>
+      </div>
+
+      <section class="panel hidden" id="quiz">
+        <div class="quiz-head">
+          <span id="quizMeta"></span>
+          <button type="button" id="btnExit" class="ghost sm">暂停并返回</button>
+        </div>
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+        <article class="card">
+          <div class="qtype" id="qType"></div>
+          <div class="stem" id="qStem"></div>
+          <div class="opts" id="qOpts"></div>
+        </article>
+        <div class="row">
+          <button type="button" id="btnSubmit" class="primary" disabled>提交答案</button>
+          <button type="button" id="btnNext" class="ghost hidden">下一题</button>
+        </div>
+        <div class="feedback hidden" id="feedback"></div>
+        <div id="quizAiShell" class="quiz-ai-shell hidden" aria-live="polite"></div>
+      </section>
+    </div>
+    <script src="./static/app.js"></script>
+    <script src="./static/analysis.js"></script>
+    <script src="./static/backup.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./service-worker.js").catch(console.warn);
+        });
+      }
+    </script>
+  </body>
+</html>
