@@ -1,5 +1,5 @@
-const CACHE_NAME = "teacher-quiz-offline-v6";
-const VERSION = "syncfix-20261014";
+const CACHE_NAME = "teacher-quiz-offline-v7";
+const VERSION = "rescue-20261014";
 const ASSETS = [
   "./",
   "./index.html",
