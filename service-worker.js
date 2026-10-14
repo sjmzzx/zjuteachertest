@@ -1,14 +1,15 @@
-const CACHE_NAME = "teacher-quiz-offline-v4";
+const CACHE_NAME = "teacher-quiz-offline-v5";
+const VERSION = "1b0ffde";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icons/icon.svg",
-  "./static/style.css",
-  "./static/app.js",
-  "./static/analysis.js",
-  "./static/backup.js",
-  "./static/sync.js",
+  `./static/style.css?v=${VERSION}`,
+  `./static/app.js?v=${VERSION}`,
+  `./static/analysis.js?v=${VERSION}`,
+  `./static/backup.js?v=${VERSION}`,
+  `./static/sync.js?v=${VERSION}`,
   "./data/banks.json",
   "./data/questions/bank-01.json",
   "./data/questions/bank-02.json",
@@ -35,6 +36,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+  if (event.request.mode === "navigate" || url.pathname.endsWith("/index.html")) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
     return;
   }
   event.respondWith(
