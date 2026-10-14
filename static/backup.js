@@ -6,6 +6,97 @@ const QuizBackup = (() => {
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
   const safe = key => !['__proto__', 'constructor', 'prototype'].includes(key);
   const integer = value => Number.isSafeInteger(value) && value >= 0;
+  const parse = (storage, key) => {
+    try {
+      const value = JSON.parse(storage.getItem(key) || '{}');
+      return object(value) ? value : {};
+    } catch {
+      return {};
+    }
+  };
+  function emptyData() {
+    return Object.fromEntries(keys.map(key => [key, {}]));
+  }
+  function sanitizeData(raw) {
+    const data = emptyData();
+    const source = object(raw) ? raw : {};
+    for (const key of keys) {
+      if (!object(source[key])) continue;
+      for (const [bank, records] of Object.entries(source[key])) {
+        if (!safe(bank)) continue;
+        if (key === keys[5]) {
+          if (object(records) && Array.isArray(records.ids) && records.ids.length &&
+              records.ids.every(id => typeof id === 'string' && safe(id)) &&
+              new Set(records.ids).size === records.ids.length &&
+              ['unseen-first','unseen','all','category','wrong','exam'].includes(records.mode) &&
+              typeof records.category === 'string' && integer(records.updatedAt)) {
+            data[key][bank] = {
+              ids: records.ids,
+              mode: records.mode,
+              category: records.category,
+              updatedAt: records.updatedAt,
+            };
+          }
+          continue;
+        }
+        if (key === keys[6]) {
+          if (!Array.isArray(records)) continue;
+          const runs = records.filter(run => object(run) && Number.isSafeInteger(run.score) &&
+            run.score >= 0 && run.score <= 100 && typeof run.passed === 'boolean' && integer(run.at))
+            .map(run => ({score: run.score, passed: run.passed, at: run.at}))
+            .slice(0,100);
+          if (runs.length) data[key][bank] = runs;
+          continue;
+        }
+        if (key === keys[7]) {
+          if (object(records) && object(records.answers) && Array.isArray(records.ids) &&
+              records.ids.length === 80 && records.ids.every(id => typeof id === 'string' && safe(id)) &&
+              new Set(records.ids).size === 80) {
+            const answers = {};
+            for (const [id, value] of Object.entries(records.answers)) {
+              if (records.ids.includes(id) && safe(id) && typeof value === 'string') answers[id] = value;
+            }
+            data[key][bank] = {answers, ids: records.ids};
+          }
+          continue;
+        }
+        if (!object(records)) continue;
+        if (key === keys[8]) {
+          const target = {};
+          for (const [id,value] of Object.entries(records)) {
+            if (safe(id) && object(value) && integer(value.correct) && integer(value.wrong)) {
+              target[id] = {correct: value.correct, wrong: value.wrong};
+            }
+          }
+          if (Object.keys(target).length) data[key][bank] = target;
+          continue;
+        }
+        const target = {};
+        for (const [id, value] of Object.entries(records)) {
+          if (!safe(id)) continue;
+          if (key === keys[0] && object(value) && integer(value.wrong) && integer(value.lastAt)) target[id] = {wrong: value.wrong, lastAt: value.lastAt};
+          else if (key === keys[1] && (value === 1 || value === true)) target[id] = 1;
+          else if (key === keys[4] && object(value) && value.version === 2 &&
+            ['memory','understanding'].includes(value.study_type) &&
+            ['reason','explanation','memory_tip','fingerprint'].every(k => typeof value[k] === 'string') &&
+            typeof value.needs_review === 'boolean') {
+            target[id] = {
+              version: 2,
+              study_type: value.study_type,
+              reason: value.reason,
+              explanation: value.explanation,
+              memory_tip: value.memory_tip,
+              fingerprint: value.fingerprint,
+              needs_review: value.needs_review,
+            };
+          }
+          else if ((key === keys[2] || key === keys[3]) && typeof value === 'string') target[id] = value;
+        }
+        if (Object.keys(target).length) data[key][bank] = target;
+      }
+    }
+    return data;
+  }
   function validate(backup) {
     if (!object(backup) || backup.format !== 'quiz-backup' || backup.version !== 1 || !object(backup.data)) {
       throw new Error('不是受支持的题库备份文件。');
@@ -67,8 +158,11 @@ const QuizBackup = (() => {
     return backup;
   }
   function capture(storage) {
-    const data = Object.fromEntries(keys.map(key => [key, JSON.parse(storage.getItem(key) || '{}')]));
+    const data = sanitizeData(Object.fromEntries(keys.map(key => [key, parse(storage, key)])));
     return validate({format:'quiz-backup',version:1,createdAt:new Date().toISOString(),data});
+  }
+  function rescue(storage) {
+    return {format:'quiz-backup',version:1,createdAt:new Date().toISOString(),data:sanitizeData(Object.fromEntries(keys.map(key => [key, parse(storage, key)])))};
   }
   function merge(current, incoming) {
     validate(current); validate(incoming);
@@ -117,7 +211,7 @@ const QuizBackup = (() => {
     const count = key => Object.values(backup.data[key]).reduce((sum, records) => sum + Object.keys(records).length,0);
     return `已做 ${count(keys[1])} 题 · 错题 ${count(keys[0])} 题 · 结构化解析 ${count(keys[4])} 条 · 文本解析 ${count(keys[2])+count(keys[3])} 条 · 练习断点 ${Object.keys(backup.data[keys[5]]).length} 个 · 模拟成绩 ${count(keys[6])} 次 · 正确率记录 ${count(keys[8])} 题`;
   }
-  return {validate,capture,merge,restore,summary};
+  return {validate,capture,rescue,merge,restore,summary};
 })();
 
 if (typeof module !== 'undefined') module.exports = QuizBackup;
@@ -125,16 +219,26 @@ if (typeof document !== 'undefined') {
   let pending = null;
   const status = document.getElementById('backupStatus');
   const confirmButton = document.getElementById('btnImportBackup');
+  function downloadBackup(backup, prefix) {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
+    const link = document.createElement('a');
+    link.href = url; link.download = `${prefix}-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url),60000);
+  }
   document.getElementById('btnExportBackup').addEventListener('click', () => {
     try {
       const backup = QuizBackup.capture(localStorage);
-      const url = URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
-      const link = document.createElement('a');
-      link.href = url; link.download = `quiz-backup-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
-      document.body.appendChild(link); link.click(); link.remove();
-      setTimeout(() => URL.revokeObjectURL(url),60000);
+      downloadBackup(backup, 'quiz-backup');
       status.textContent = `已生成备份：${QuizBackup.summary(backup)}。不含 API 配置。`;
     } catch (error) { status.textContent = `导出失败：${error.message}`; }
+  });
+  document.getElementById('btnRescueBackup').addEventListener('click', () => {
+    try {
+      const backup = QuizBackup.validate(QuizBackup.rescue(localStorage));
+      downloadBackup(backup, 'quiz-rescue-backup');
+      status.textContent = `已生成应急备份：${QuizBackup.summary(backup)}。已自动跳过无法识别的坏记录。`;
+    } catch (error) { status.textContent = `应急导出失败：${error.message}`; }
   });
   document.getElementById('backupFile').addEventListener('change', async event => {
     pending = null; confirmButton.disabled = true;
