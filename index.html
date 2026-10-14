@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#111827" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="刷题离线版" />
-    <link rel="stylesheet" href="./static/style.css?v=1b0ffde" />
+    <link rel="stylesheet" href="./static/style.css?v=syncfix-20261014" />
   </head>
   <body>
     <div class="app">
@@ -215,14 +215,14 @@
         <div id="quizAiShell" class="quiz-ai-shell hidden" aria-live="polite"></div>
       </section>
     </div>
-    <script src="./static/app.js?v=1b0ffde"></script>
-    <script src="./static/analysis.js?v=1b0ffde"></script>
-    <script src="./static/backup.js?v=1b0ffde"></script>
-    <script src="./static/sync.js?v=1b0ffde"></script>
+    <script src="./static/app.js?v=syncfix-20261014"></script>
+    <script src="./static/analysis.js?v=syncfix-20261014"></script>
+    <script src="./static/backup.js?v=syncfix-20261014"></script>
+    <script src="./static/sync.js?v=syncfix-20261014"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./service-worker.js?v=1b0ffde").catch(console.warn);
+          navigator.serviceWorker.register("./service-worker.js?v=syncfix-20261014").catch(console.warn);
         });
       }
     </script>

@@ -17,8 +17,9 @@ const QuizBackup = (() => {
     }
     for (const key of keys) {
       for (const [bank, records] of Object.entries(backup.data[key])) {
-        if (!safe(bank) || !object(records)) throw new Error('题库记录格式错误。');
+        if (!safe(bank)) throw new Error('题库记录格式错误。');
         if (key === keys[5]) {
+          if (!object(records)) throw new Error('练习断点格式错误。');
           if (!Array.isArray(records.ids) || !records.ids.length || !records.ids.every(id => typeof id === 'string' && safe(id)) ||
               new Set(records.ids).size !== records.ids.length || !['unseen-first','unseen','all','category','wrong','exam'].includes(records.mode) ||
               typeof records.category !== 'string' || !integer(records.updatedAt) ||
@@ -32,6 +33,7 @@ const QuizBackup = (() => {
           continue;
         }
         if (key === keys[7]) {
+          if (!object(records)) throw new Error('模拟试卷断点格式错误。');
           if (!object(records.answers) || !Array.isArray(records.ids) || records.ids.length !== 80 ||
               !records.ids.every(id => typeof id === 'string' && safe(id)) || new Set(records.ids).size !== 80 ||
               Object.keys(records.answers).some(id => !records.ids.includes(id) || !safe(id) || typeof records.answers[id] !== 'string') ||
@@ -39,12 +41,14 @@ const QuizBackup = (() => {
           continue;
         }
         if (key === keys[8]) {
+          if (!object(records)) throw new Error('正确率记录格式错误。');
           for (const [id,value] of Object.entries(records)) {
             if (!safe(id) || !object(value) || !integer(value.correct) || !integer(value.wrong) ||
                 Object.keys(value).some(k => !['correct','wrong'].includes(k))) throw new Error(`正确率记录格式错误：${bank} #${id}`);
           }
           continue;
         }
+        if (!object(records)) throw new Error('题库记录格式错误。');
         for (const [id, value] of Object.entries(records)) {
           if (!safe(id)) throw new Error('题号无效。');
           let valid;
