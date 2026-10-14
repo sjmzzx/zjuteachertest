@@ -262,6 +262,32 @@ function formatAnswerDetails(q) {
     .join("；");
 }
 
+function mountWrongOptions(item, q) {
+  const host = item.querySelector(".wrong-options");
+  if (!host || !q?.options) return;
+  const letters = Object.keys(q.options).sort();
+  if (!letters.length) {
+    host.remove();
+    return;
+  }
+  for (const letter of letters) {
+    const text = q.options[letter];
+    if (!text) continue;
+    const row = document.createElement("div");
+    row.className = "wrong-option";
+    if ((q.answer || "").includes(letter)) row.classList.add("correct");
+    const mark = document.createElement("span");
+    mark.className = "wrong-option-letter";
+    mark.textContent = letter;
+    const body = document.createElement("span");
+    body.className = "wrong-option-text";
+    body.textContent = text;
+    row.appendChild(mark);
+    row.appendChild(body);
+    host.appendChild(row);
+  }
+}
+
 function buildMemoryTip(q) {
   const stem = q.stem || "";
   const optionCount = Object.keys(q.options || {}).length;
@@ -687,12 +713,14 @@ function renderWrongList() {
     item.innerHTML = `
       <div class="meta">错题 ${w} 次 · 最近 ${new Date(rec.lastAt).toLocaleString()}</div>
       <div class="stem"></div>
+      <div class="wrong-options" aria-label="全部选项"></div>
       <div class="wrong-answer"><span>正确答案</span><strong></strong></div>
       <div class="actions row">
         <button type="button" class="ghost sm" data-act="forget" data-qid="${qid}">移除记录</button>
       </div>
     `;
     item.querySelector(".stem").textContent = stem;
+    mountWrongOptions(item, q);
     item.querySelector(".wrong-answer strong").textContent = q ? formatAnswerDetails(q) : "请重新打开该题库后查看";
     mountAnalysisDetails(item, bankId, qid);
     host.appendChild(item);
