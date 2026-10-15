@@ -555,6 +555,39 @@ button:disabled {
   margin-top: 10px;
 }
 
+.question-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 0.88rem;
+}
+
+.question-note textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  overflow-wrap: anywhere;
+}
+
+.question-note textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.note-status {
+  min-height: 1.2em;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .ai-details {
   margin-top: 12px;
   border-radius: 10px;
