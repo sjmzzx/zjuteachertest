@@ -2,7 +2,8 @@
 const QuizBackup = (() => {
   const keys = ['quiz_bank_stats_v1', 'quiz_question_seen_v1', 'quiz_ai_analysis_v1',
     'quiz_ai_analysis_text_v2', 'quiz_structured_analysis_v2', 'quiz_sessions_v1',
-    'quiz_exam_results_v1', 'quiz_exam_drafts_v1', 'quiz_answer_stats_v1'];
+    'quiz_exam_results_v1', 'quiz_exam_drafts_v1', 'quiz_answer_stats_v1',
+    'quiz_question_notes_v1'];
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
   const safe = key => !['__proto__', 'constructor', 'prototype'].includes(key);
   const integer = value => Number.isSafeInteger(value) && value >= 0;
@@ -75,6 +76,7 @@ const QuizBackup = (() => {
         for (const [id, value] of Object.entries(records)) {
           if (!safe(id)) continue;
           if (key === keys[0] && object(value) && integer(value.wrong) && integer(value.lastAt)) target[id] = {wrong: value.wrong, lastAt: value.lastAt};
+          else if (key === keys[9] && object(value) && typeof value.text === 'string' && integer(value.updatedAt)) target[id] = {text: value.text, updatedAt: value.updatedAt};
           else if (key === keys[1] && (value === 1 || value === true)) target[id] = 1;
           else if (key === keys[4] && object(value) && value.version === 2 &&
             ['memory','understanding'].includes(value.study_type) &&
@@ -144,6 +146,7 @@ const QuizBackup = (() => {
           if (!safe(id)) throw new Error('题号无效。');
           let valid;
           if (key === keys[0]) valid = object(value) && integer(value.wrong) && integer(value.lastAt) && Object.keys(value).every(k => ['wrong','lastAt'].includes(k));
+          else if (key === keys[9]) valid = object(value) && typeof value.text === 'string' && integer(value.updatedAt) && Object.keys(value).every(k => ['text','updatedAt'].includes(k));
           else if (key === keys[1]) valid = value === 1 || value === true;
           else if (key === keys[4]) valid = object(value) && value.version === 2 &&
             ['memory','understanding'].includes(value.study_type) &&
@@ -185,6 +188,8 @@ const QuizBackup = (() => {
       const target = result.data[key][bank] ||= {};
       for (const [id, value] of Object.entries(records)) {
         if (!(id in target)) target[id] = value;
+        else if (key === keys[9] && (value.updatedAt > target[id].updatedAt ||
+            (value.updatedAt === target[id].updatedAt && value.text > target[id].text))) target[id] = value;
         else if (key === keys[0]) target[id] = {wrong:Math.max(target[id].wrong,value.wrong),lastAt:Math.max(target[id].lastAt,value.lastAt)};
       }
     }
@@ -209,7 +214,8 @@ const QuizBackup = (() => {
   }
   function summary(backup) {
     const count = key => Object.values(backup.data[key]).reduce((sum, records) => sum + Object.keys(records).length,0);
-    return `已做 ${count(keys[1])} 题 · 错题 ${count(keys[0])} 题 · 结构化解析 ${count(keys[4])} 条 · 文本解析 ${count(keys[2])+count(keys[3])} 条 · 练习断点 ${Object.keys(backup.data[keys[5]]).length} 个 · 模拟成绩 ${count(keys[6])} 次 · 正确率记录 ${count(keys[8])} 题`;
+    const notes = Object.values(backup.data[keys[9]] || {}).reduce((sum, records) => sum + Object.values(records).filter(note => note.text).length, 0);
+    return `已做 ${count(keys[1])} 题 · 错题 ${count(keys[0])} 题 · 结构化解析 ${count(keys[4])} 条 · 文本解析 ${count(keys[2])+count(keys[3])} 条 · 练习断点 ${Object.keys(backup.data[keys[5]]).length} 个 · 模拟成绩 ${count(keys[6])} 次 · 正确率记录 ${count(keys[8])} 题 · 备注 ${notes} 条`;
   }
   return {validate,capture,rescue,merge,restore,summary};
 })();
