@@ -7,6 +7,7 @@ const LS_SESSION = "quiz_sessions_v1";
 const LS_EXAMS = "quiz_exam_results_v1";
 const LS_THEME = "quiz_theme_v1";
 const LS_EXAM_DRAFT = "quiz_exam_drafts_v1";
+const LS_NOTES = "quiz_question_notes_v1";
 let examMode = false;
 let examAnswers = new Map();
 let examAllQuestions = [];
@@ -83,6 +84,45 @@ function loadStats() {
   } catch {
     return {};
   }
+}
+
+function loadNotes() {
+  try {
+    const value = JSON.parse(localStorage.getItem(LS_NOTES) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch { return {}; }
+}
+
+function mountQuestionNote(host, bankId, qid) {
+  host.replaceChildren();
+  const label = document.createElement("label");
+  label.className = "question-note";
+  const title = document.createElement("span");
+  title.textContent = "我的备注";
+  const input = document.createElement("textarea");
+  input.rows = 1;
+  input.placeholder = "记下易错点或自己的理解";
+  input.value = loadNotes()[bankId]?.[String(qid)]?.text || "";
+  const status = document.createElement("span");
+  status.className = "note-status";
+  status.setAttribute("role", "status");
+  status.textContent = input.value ? "已保存到本机" : "";
+  input.addEventListener("input", () => {
+    try {
+      const notes = loadNotes();
+      const previous = notes[bankId]?.[String(qid)];
+      notes[bankId] ||= {};
+      // Keep an empty record so a cleared note does not return during sync.
+      notes[bankId][String(qid)] = {
+        text: input.value,
+        updatedAt: Math.max(Date.now(), (previous?.updatedAt || 0) + 1),
+      };
+      localStorage.setItem(LS_NOTES, JSON.stringify(notes));
+      status.textContent = input.value ? "已保存到本机" : "已清空";
+    } catch { status.textContent = "保存失败，请保留文字并重试"; }
+  });
+  label.append(title, input, status);
+  host.appendChild(label);
 }
 
 function saveStats(s) {
@@ -623,6 +663,7 @@ function renderQuestion() {
   const bankId = $("bankSelect").value;
   const total = queue.length;
   const q = queue[idx];
+  mountQuestionNote($("quizNote"), bankId, q.id);
   pickOne = null;
   pickMulti = new Set();
   syncSubmitState(q);
@@ -717,6 +758,7 @@ function renderWrongList() {
       <div class="stem"></div>
       <div class="wrong-options" aria-label="全部选项"></div>
       <div class="wrong-answer"><span>正确答案</span><strong></strong></div>
+      <div class="wrong-note"></div>
       <div class="actions row">
         <button type="button" class="ghost sm" data-act="forget" data-qid="${qid}">移除记录</button>
       </div>
@@ -724,6 +766,7 @@ function renderWrongList() {
     item.querySelector(".stem").textContent = stem;
     mountWrongOptions(item, q);
     item.querySelector(".wrong-answer strong").textContent = q ? formatAnswerDetails(q) : "请重新打开该题库后查看";
+    mountQuestionNote(item.querySelector(".wrong-note"), bankId, qid);
     mountAnalysisDetails(item, bankId, qid);
     host.appendChild(item);
   }
