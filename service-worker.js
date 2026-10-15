@@ -1,4 +1,4 @@
-const CACHE_NAME = "teacher-quiz-offline-v7";
+const CACHE_NAME = "teacher-quiz-offline-v8";
 const VERSION = "rescue-20261014";
 const ASSETS = [
   "./",
@@ -6,7 +6,7 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./icons/icon.svg",
   `./static/style.css?v=${VERSION}`,
-  `./static/app.js?v=${VERSION}`,
+  "./static/app.js?v=category-20261015",
   `./static/analysis.js?v=${VERSION}`,
   `./static/backup.js?v=${VERSION}`,
   `./static/sync.js?v=${VERSION}`,
