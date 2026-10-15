@@ -427,6 +427,7 @@ function renderCategoryControls() {
   const previous = sel.value;
   const counts = [...categoryCounts().entries()];
   $("unclassifiedStatus").textContent = `待 AI 判定：${questions.length-counts[0][1]-counts[1][1]} 题`;
+  counts.unshift(["全部题目", questions.length]);
   sel.innerHTML = "";
   for (const [name, count] of counts) {
     const o = document.createElement("option");
@@ -467,7 +468,8 @@ function buildQueue(bankId) {
   } else if (mode === "category") {
     activeCategory = $("categorySelect").value;
     const records = practiceRecords(bankId);
-    queue = questions.filter(q => practiceCategories(q, records).includes(activeCategory));
+    queue = activeCategory === "全部题目" ? [...questions] :
+      questions.filter(q => practiceCategories(q, records).includes(activeCategory));
     if (queue.length === 0) {
       alert("该分类下暂无题目。");
       return false;
@@ -951,7 +953,7 @@ $("heatFilter").addEventListener("change", renderHeatMatrix);
 $("btnStart").addEventListener("click", async () => {
   const bankId = $("bankSelect").value;
   examMode=false; examAllQuestions=[];
-  mode = $("practiceMode").value;
+  mode = "category";
   await loadQuestions(bankId);
   if (!buildQueue(bankId)) return;
   showQuiz();
