@@ -1,12 +1,12 @@
-const CACHE_NAME = "teacher-quiz-offline-v8";
-const VERSION = "rescue-20261014";
+const CACHE_NAME = "teacher-quiz-offline-v9";
+const VERSION = "notes-20261015";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   `./static/style.css?v=${VERSION}`,
-  "./static/app.js?v=category-20261015",
+  `./static/app.js?v=${VERSION}`,
   `./static/analysis.js?v=${VERSION}`,
   `./static/backup.js?v=${VERSION}`,
   `./static/sync.js?v=${VERSION}`,
